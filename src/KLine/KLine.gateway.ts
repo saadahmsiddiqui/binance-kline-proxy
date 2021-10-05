@@ -37,30 +37,42 @@ export class KLineGateway implements OnGatewayConnection, OnGatewayDisconnect {
     binanceConnections: WebSocket[] = [];
 
     handleClientMessage(message: any, clientId: string) {
-        const keys = message.split('@');
-        const interval = keys[1].split('_')[1];
-
-        if (
-            SupportedSymbols.includes(keys[0]) &&
-            SupportedIntervals.includes(interval)
-        ) {
-            const newBinanceConn: { clientid: string } & WebSocket =
-                new WebSocket(
-                    `wss://stream.binance.com:9443/stream?streams=${message}`,
-                );
-
-            newBinanceConn.clientid = clientId;
-            this.binanceConnections.push(newBinanceConn);
-
-            newBinanceConn.onmessage = (mes) => {
-                const client = this.allConnected.find(
-                    (c: { id: string } & WebSocket) => c.id === clientId,
-                );
-
-                if (client) {
-                    client.send(mes.data);
-                }
-            };
+        if (message === 'UNSUBSCRIBE') {
+            const bCon = this.binanceConnections.find((bCon: { clientid: string } & WebSocket) => {
+                return bCon.clientid === clientId
+            });
+            this.binanceConnections = this.binanceConnections.filter((bCon: { clientid: string } & WebSocket) => {
+                return bCon.clientid !== clientId;
+            });
+            if (bCon) {
+                bCon.close();
+            }
+        } else {
+            const keys = message.split('@');
+            const interval = keys[1].split('_')[1];
+    
+            if (
+                SupportedSymbols.includes(keys[0]) &&
+                SupportedIntervals.includes(interval)
+            ) {
+                const newBinanceConn: { clientid: string } & WebSocket =
+                    new WebSocket(
+                        `wss://stream.binance.com:9443/stream?streams=${message}`,
+                    );
+    
+                newBinanceConn.clientid = clientId;
+                this.binanceConnections.push(newBinanceConn);
+    
+                newBinanceConn.onmessage = (mes) => {
+                    const client = this.allConnected.find(
+                        (c: { id: string } & WebSocket) => c.id === clientId,
+                    );
+    
+                    if (client) {
+                        client.send(mes.data);
+                    }
+                };
+            }
         }
     }
 
