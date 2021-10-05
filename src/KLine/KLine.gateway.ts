@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import {
     OnGatewayConnection,
     OnGatewayDisconnect,
@@ -51,10 +52,6 @@ export class KLineGateway implements OnGatewayConnection, OnGatewayDisconnect {
             newBinanceConn.clientid = clientId;
             this.binanceConnections.push(newBinanceConn);
 
-            newBinanceConn.onopen = () => {
-                console.log('Open');
-            };
-
             newBinanceConn.onmessage = (mes) => {
                 const client = this.allConnected.find(
                     (c: { id: string } & WebSocket) => c.id === clientId,
@@ -70,7 +67,7 @@ export class KLineGateway implements OnGatewayConnection, OnGatewayDisconnect {
     handleConnection(client: any, ...args: any[]) {
         client.id = uuidv4();
         this.allConnected.push(client);
-        console.log(`[${client.id}] User Connection`);
+        Logger.log(`Connected Client ${client.id}`, 'KLineGateway');
 
         client.addEventListener('message', (message) => {
             const binanceConnForThisClient = this.binanceConnections.find(
@@ -82,7 +79,15 @@ export class KLineGateway implements OnGatewayConnection, OnGatewayDisconnect {
                     bCon.clientid !== client.id,
             );
 
-            if (binanceConnForThisClient) binanceConnForThisClient.close();
+            if (binanceConnForThisClient) {
+                Logger.log(
+                    `Closing Binance connection for ${
+                        (binanceConnForThisClient as any).clientid
+                    }`,
+                    'KLineGateway',
+                );
+                binanceConnForThisClient.close();
+            }
 
             this.handleClientMessage(message.data, client.id);
         });
@@ -102,7 +107,7 @@ export class KLineGateway implements OnGatewayConnection, OnGatewayDisconnect {
             },
         );
 
-        console.log(`[${client.id}] User Disconnection`);
+        Logger.log(`Disconnecting ${client.id}`, 'KLineGateway');
         this.binanceConnections = this.binanceConnections.filter(
             (binanceConn: { clientid: string } & WebSocket) => {
                 if (binanceConn.clientid === client.id) {
