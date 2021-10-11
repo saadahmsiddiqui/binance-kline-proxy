@@ -6,7 +6,7 @@ import {
 } from '@nestjs/websockets';
 import { Logger } from '@nestjs/common';
 import { Server } from 'socket.io';
-import { BinanceInterval, BinancePair, ClientMap } from 'src/types';
+import { ClientMap } from 'src/types';
 import { isValidSubscription } from 'src/utils';
 const { v4: uuidv4 } = require('uuid');
 const WebSocket = require('ws');
@@ -26,7 +26,7 @@ export class KLineGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
         this.binanceListeners[clientId] = newBinanceConn;
         newBinanceConn.onmessage = (mes) => {
-            this.clientConnections[clientId].send(mes.data)
+            this.clientConnections[clientId].send(mes.data);
         };
     }
 
@@ -37,18 +37,17 @@ export class KLineGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
         Logger.log(`Connected Client ${newId}`, 'KLineGateway');
         client.addEventListener('message', (message) => {
-            if (message === 'UNSUBSCRIBE') {
+            if (message.data === 'UNSUBSCRIBE') {
                 this.binanceListeners[newId].close();
                 this.binanceListeners[newId] = undefined;
-            }
-
-            if (isValidSubscription(message.data)) {
+                Logger.log(`Unsubscribing for ${newId}`, 'KLineGateway');
+            } else if (isValidSubscription(message.data)) {
                 if (this.binanceListeners[newId]) {
                     this.binanceListeners[newId].close();
                     this.binanceListeners[newId] = undefined;
                 }
 
-                this.handleClientMessage(message.data, newId)
+                this.handleClientMessage(message.data, newId);
             }
         });
     }
