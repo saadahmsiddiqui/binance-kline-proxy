@@ -1,26 +1,12 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import axios from 'axios';
+import { BinanceInterval, BinancePair } from 'src/types';
 
 @Injectable()
-export class AppService {
+export class KLineService {
     getBinanceKLines(
-        symbol: string,
-        interval:
-            | '1m'
-            | '3m'
-            | '5m'
-            | '15m'
-            | '30m'
-            | '1h'
-            | '2h'
-            | '4h'
-            | '6h'
-            | '8h'
-            | '12h'
-            | '1d'
-            | '3d'
-            | '1w'
-            | '1M',
+        symbol: BinancePair,
+        interval: BinanceInterval,
         startTime: number,
         endTime: number,
         limit: number,

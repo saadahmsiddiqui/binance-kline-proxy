@@ -6,41 +6,11 @@ import {
 } from '@nestjs/websockets';
 import { Logger } from '@nestjs/common';
 import { Server } from 'socket.io';
+import { BinanceInterval, BinancePair, ClientMap } from 'src/types';
+import { isValidSubscription } from 'src/utils';
 const { v4: uuidv4 } = require('uuid');
 const WebSocket = require('ws');
 
-const SupportedSymbols = ['ethusdt', 'dotusdt'];
-const SupportedIntervals = [
-    '1m',
-    '3m',
-    '5m',
-    '15m',
-    '30m',
-    '1h',
-    '2h',
-    '4h',
-    '6h',
-    '8h',
-    '12h',
-    '1d',
-    '3d',
-    '1w',
-    '1M',
-];
-
-type ClientMap = {
-    [key: string]: WebSocket | undefined;
-};
-
-function isValidSubscription(subscriptionMessage: string): boolean {
-    const keys = subscriptionMessage.split('@');
-    const interval = keys[1].split('_')[1];
-
-    return (
-        SupportedSymbols.includes(keys[0]) &&
-        SupportedIntervals.includes(interval)
-    );
-}
 @WebSocketGateway()
 export class KLineGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @WebSocketServer()
